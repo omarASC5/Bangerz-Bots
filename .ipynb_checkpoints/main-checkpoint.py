@@ -11,8 +11,6 @@ test_song = 'spotify:track:4evmHXcjt3bTUHD1cvny97'
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-SPOTIFY_CLIENT_ID = 'd290e08867e94a0483f9ce65148512d2'
-SPOTIFY_CLIENT_SECRET = '39fe934be1644cae9401d5d56a7cb7ca'
 client_credentials_manager = SpotifyClientCredentials(client_id=config.SPOTIFY_CLIENT_ID, client_secret=config.SPOTIFY_CLIENT_SECRET)
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
