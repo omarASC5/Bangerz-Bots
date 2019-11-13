@@ -1,7 +1,7 @@
 import discord
 import spotipy
 from discord.ext import commands
-import config
+import config as c
 import youtube_dl
 
 players = {}
@@ -11,7 +11,7 @@ test_song = 'spotify:track:4evmHXcjt3bTUHD1cvny97'
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-client_credentials_manager = SpotifyClientCredentials(client_id=config.SPOTIFY_CLIENT_ID, client_secret=config.SPOTIFY_CLIENT_SECRET)
+client_credentials_manager = SpotifyClientCredentials(c.SPOTIFY_CLIENT_ID, client_secret=c.SPOTIFY_CLIENT_SECRET)
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 results = sp.search(q='Drake', limit=20)
@@ -78,4 +78,4 @@ async def yt(ctx, url):
     vc = await channel.connect()
     player = await vc.create_ytdl_player(url)
     vc.play(player)
-client.run(config.TOKEN)
+client.run(c.TOKEN)
