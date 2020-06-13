@@ -5,7 +5,9 @@ import os
 import config as c
 import youtube_dl
 import random
+import asyncio
 import shutil
+import time
 # import spotipy.util as util
 # from bottle import route, run, request
 # from spotipy.oauth2 import SpotifyClientCredentials
@@ -410,14 +412,17 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
 
         print('Song added to queue')
 
-    q_num = 0
-    # If the queue is empty add 10 more songs
-    while q_num >= 0 and q_num < 3:
-        # for i in range(1):
+    def next_song():
         random_song = random.choice(found_songs)
         url = random_song[1] + " " + random_song[0]
         q2(url)
-        q_num += 1
+
+    next_song()
+    while True:
+        next_song()
+        await asyncio.sleep(250)
+    # If the queue is empty add 10 more songs
+
     # search(random_song[1])
 
 @client.command(pass_context=True, aliases=['pa, pau'])
