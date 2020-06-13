@@ -1,5 +1,7 @@
 import discord
 from discord.ext import commands
+from discord.utils import get
+import os
 import config as c
 import youtube_dl
 # import spotipy.util as util
@@ -32,7 +34,7 @@ import vlc
 import urllib.request
 from bs4 import BeautifulSoup
 
-
+import asyncio
 # time.sleep(120)
 
 credentials = oauth2.SpotifyClientCredentials(
@@ -120,16 +122,72 @@ async def on_message(message):
 async def ping(ctx):
     await ctx.send('Pong! {0}'.format(round(client.latency, 1)))
 
-@client.command()
+@client.command(pass_context=True, aliases=['j, joi'])
 async def join(ctx):
+    global voice
     channel = ctx.message.author.voice.channel
     if not channel:
         await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
         return
-    
+    voice = get(client.voice_clients, guild=ctx.guild)
+
+    if voice and voice.is_connected():
+        await voice.move_to(channel)
     else:
         voice = await channel.connect()
-        
+# @client.command()
+# async def join(ctx):
+#     channel = ctx.message.author.voice.channel
+#     if not channel:
+#         await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
+#         return
+    
+#     else:
+#         voice = await channel.connect()
+
+# TODO: Only allow song commands in the song channel
+@client.command(pass_context=True, aliases=['y'])
+async def yt(ctx, url : str):
+    song_there = os.path.isfile('song.mp3')
+    try:
+        if song_there:
+            os.remove("song.mp3")
+            print("Removed old song file")
+    except PermissionError:
+        print("Trying to delete song file, but it's being played")
+        await ctx.send("ERROR: Music playing")
+        return
+
+    await ctx.send("Getting song ready now")
+    voice = get(client.voice_clients, guild=ctx.guild)
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        print('Downloading audio now\n')
+        ydl.download([url])
+
+    for file in os.listdir("./"):
+        if file.endswith('.mp3'):
+            name = file
+            print("Renamed File: {}".format(name), end='\n\n')
+            os.rename(file, 'song.mp3')
+
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: print(f'{name} has finished playing'))
+    voice.source = discord.PCMVolumeTransformer(voice.source)
+    voice.source.volume = 0.2
+
+    nname = name.rsplit('-', 2)
+    await ctx.send(f'Playing {nname}')
+    print('playing\n')
+
 @client.command()
 async def play(ctx):
     channel = ctx.message.author.voice.channel
@@ -178,10 +236,13 @@ async def leave(ctx):
     await voice_client.disconnect()
 
 
-@client.command()
-async def yt(ctx, url):
-    channel = ctx.message.author.voice.channel
-    vc = await channel.connect()
-    player = await vc.create_ytdl_player(url)
-    vc.play(player)
+
+
+# @client.command(pass_context=True)
+# async def yt(ctx, url):
+#     # TODO: https://www.youtube.com/watch?v=Bp9SZYqIWIM
+#     vc = await channel.connect()
+#     vc.play(discord.FFmpegPCMAudio(executable="C:/path/ffmpeg.exe", source="mp3.mp3"))
+
+# client.add_cog(YTDLSource(client))
 client.run(c.DISCORD_TOKEN)
