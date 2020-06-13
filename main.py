@@ -154,24 +154,27 @@ queues = {}
 async def yt(ctx, search : str):
     regex = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
     is_url = re.match(regex, search) is not None
-    url = ""
-    if not is_url:
-        textToSearch = search
-        query = urllib.parse.quote(textToSearch)
-        youtube_URL = "https://www.youtube.com/results?search_query=" + query
-        response = urllib.request.urlopen(youtube_URL)
-        html = response.read()
-        soup = BeautifulSoup(html, 'html.parser')
-        youtubeResults = []
-        for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-            if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
-                youtubeResults.append('https://www.youtube.com' + vid['href'])
-                print('https://www.youtube.com' + vid['href'])
+    url = search
+    # if not is_url:
+    #     textToSearch = search
+    #     query = urllib.parse.quote(textToSearch)
+    #     youtube_URL = "https://www.youtube.com/results?search_query=" + query
+    #     response = urllib.request.urlopen(youtube_URL)
+    #     html = response.read()
+    #     soup = BeautifulSoup(html, 'html.parser')
+    #     youtubeResults = []
+    #     for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+    #         if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
+    #             youtubeResults.append('https://www.youtube.com' + vid['href'])
+    #             print('https://www.youtube.com' + vid['href'])
 
-        # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-        url = youtubeResults[0]
-    else:
-        url = search
+    #     # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
+    #     for youtube_result in youtubeResults:
+    #         if 'watch' in youtube_result:
+    #             url = youtube_result
+    #             break
+    # else:
+    #     url = search
     def check_queue():
         Queue_infile = os.path.isdir('./Queue')
         if Queue_infile is True:
@@ -240,6 +243,7 @@ async def yt(ctx, search : str):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        'default_search': 'ytsearch'
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -407,7 +411,31 @@ async def leave(ctx):
 
 
 @client.command(pass_context=True, aliases=['q, que'])
-async def queue(ctx, url : str):
+async def queue(ctx, search : str):
+    regex = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
+    is_url = re.match(regex, search) is not None
+    url = search
+    # if not is_url:
+    #     textToSearch = search
+    #     query = urllib.parse.quote(textToSearch)
+    #     youtube_URL = "https://www.youtube.com/results?search_query=" + query
+    #     response = urllib.request.urlopen(youtube_URL)
+    #     html = response.read()
+    #     soup = BeautifulSoup(html, 'html.parser')
+    #     youtubeResults = []
+    #     for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+    #         if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
+    #             youtubeResults.append('https://www.youtube.com' + vid['href'])
+    #             print('https://www.youtube.com' + vid['href'])
+
+    #     # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
+    #     for youtube_result in youtubeResults:
+    #         if 'watch' in youtube_result:
+    #             url = youtube_result
+    #             break
+    # else:
+    #     url = search
+
     Queue_infile = os.path.isdir('./Queue')
     if Queue_infile is False:
         os.mkdir('Queue')
@@ -435,6 +463,7 @@ async def queue(ctx, url : str):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        'default_search': 'ytsearch'
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
