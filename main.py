@@ -4,6 +4,7 @@ from discord.utils import get
 import os
 import config as c
 import youtube_dl
+import random
 # import spotipy.util as util
 # from bottle import route, run, request
 # from spotipy.oauth2 import SpotifyClientCredentials
@@ -52,7 +53,7 @@ def show_tracks(tracks, playlists_table, playlist_name):
     for i, item in enumerate(tracks['items']):
         track = item['track']
         try:
-            playlists_table[playlist_name].add((track['artists'][0]['name'], track['name']))
+            playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
         except:
             continue
         # print()
@@ -72,7 +73,7 @@ if token:
     playlists = sp2.user_playlists(username)
     for playlist in playlists['items']:
         # print()
-        playlists_table[playlist['name']] = set()
+        playlists_table[playlist['name']] = list()
         print(playlist['name'])
         # print ('  total tracks', playlist['tracks']['total'])
         results = sp2.playlist(playlist['id'],
@@ -262,6 +263,83 @@ async def search(ctx, search : str):
     # print(r.content)
     # vc.play(sp.start_playback({"context_uri": test_song}))
     # vc.play(discord.FFmpegPCMAudio('Nick Jonas - The Difference (Audio).mp3'), after=lambda e: print('done', e))
+
+@client.command()
+async def sp_playlists(ctx):
+    index = 1
+    for playlist in playlists_table.keys():
+        await ctx.send(f'{index}. {playlist}')
+        index += 1
+    await ctx.send('Please call command: sp_playlist (without the s) with a playlist number')
+
+@client.command()
+async def sp_playlist(ctx, index : int, shuffle = ""):
+    i = 1
+    found_playlist = ''
+    found_songs = []
+    for playlist, songs in playlists_table.items():
+        if i == index:
+            found_playlist = playlist
+            found_songs = songs
+            break
+        i += 1
+    await ctx.send(f'Found playlist: {found_playlist}')
+    random_song = random.choice(found_songs)
+    await ctx.send(f'Playing: {random_song}')
+    textToSearch = random_song[1] + " " + random_song[0]
+    query = urllib.parse.quote(textToSearch)
+    youtube_URL = "https://www.youtube.com/results?search_query=" + query
+    response = urllib.request.urlopen(youtube_URL)
+    html = response.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    youtubeResults = []
+    for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+        if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
+            youtubeResults.append('https://www.youtube.com' + vid['href'])
+            print('https://www.youtube.com' + vid['href'])
+
+    # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
+    url = youtubeResults[0]
+    song_there = os.path.isfile('song.mp3')
+    try:
+        if song_there:
+            os.remove("song.mp3")
+            print("Removed old song file")
+    except PermissionError:
+        print("Trying to delete song file, but it's being played")
+        await ctx.send("ERROR: Music playing")
+        return
+
+    await ctx.send("Getting song ready now")
+    voice = get(client.voice_clients, guild=ctx.guild)
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        print('Downloading audio now\n')
+        ydl.download([url])
+
+    for file in os.listdir("./"):
+        if file.endswith('.mp3'):
+            name = file
+            print("Renamed File: {}".format(name), end='\n\n')
+            os.rename(file, 'song.mp3')
+
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: print(f'{name} has finished playing'))
+    voice.source = discord.PCMVolumeTransformer(voice.source)
+    voice.source.volume = 0.5
+
+    nname = name.rsplit('-', 2)
+    await ctx.send(f'Playing {nname}')
+    print('playing\n')
+    # search(random_song[1])
 
 @client.command()
 async def leave(ctx):
