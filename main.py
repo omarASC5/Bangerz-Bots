@@ -374,7 +374,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
     await ctx.send(f'Playing {nname}')
     print('playing\n')
     
-    def q2(search):
+    def q2(url):
         Queue_infile = os.path.isdir('./Queue')
         if Queue_infile is False:
             os.mkdir('Queue')
@@ -414,6 +414,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
 
     def next_song():
         random_song = random.choice(found_songs)
+        print('random_song', random_song)
         url = random_song[1] + " " + random_song[0]
         q2(url)
 
