@@ -29,19 +29,10 @@ import spotipy.oauth2 as oauth2
 import pafy
 import vlc
 
-youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-video = pafy.new(youtube_URL)
-best = video.getbest()
-playurl = best.url
+import urllib.request
+from bs4 import BeautifulSoup
 
-player = vlc.MediaPlayer(playurl)
-player.play()
-# Instance = vlc.Instance()
-# player = Instance.media_player_new()
-# Media = Instance.media_new(playurl)
-# Media.get_mrl()
-# player.set_media(Media)
-# player.play()
+
 # time.sleep(120)
 
 credentials = oauth2.SpotifyClientCredentials(
@@ -143,7 +134,39 @@ async def join(ctx):
 async def play(ctx):
     channel = ctx.message.author.voice.channel
     vc = await channel.connect()
-        
+    textToSearch = 'toosie slide'
+    query = urllib.parse.quote(textToSearch)
+    youtube_URL = "https://www.youtube.com/results?search_query=" + query
+    response = urllib.request.urlopen(youtube_URL)
+    html = response.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    youtubeResults = []
+    for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+        youtubeResults.append('https://www.youtube.com' + vid['href'])
+        # print('https://www.youtube.com' + vid['href'])
+
+    # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
+    for youtube_result in youtubeResults:
+        try:
+            video = pafy.new(youtube_result)
+        except:
+            continue
+
+    best = video.getbest()
+    playurl = best.url
+
+    # NOTE: THE FOLLOWING TWO LINES OF CODE ARE RESPONSIBLE FOR  VIDEO STREAMING OF YOUTUBE VIDEOS
+    # player = vlc.MediaPlayer(playurl)
+    # player.play()
+
+
+    Instance = vlc.Instance()
+    player = Instance.media_player_new()
+    Media = Instance.media_new(playurl)
+    Media.get_mrl()
+    player.set_media(Media)
+    vc.play(player.play())
+    # player.play()
     # print(r.content)
     # vc.play(sp.start_playback({"context_uri": test_song}))
     # vc.play(discord.FFmpegPCMAudio('Nick Jonas - The Difference (Audio).mp3'), after=lambda e: print('done', e))
