@@ -29,6 +29,21 @@ import spotipy.oauth2 as oauth2
 import pafy
 import vlc
 
+youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
+video = pafy.new(youtube_URL)
+best = video.getbest()
+playurl = best.url
+
+player = vlc.MediaPlayer(playurl)
+player.play()
+# Instance = vlc.Instance()
+# player = Instance.media_player_new()
+# Media = Instance.media_new(playurl)
+# Media.get_mrl()
+# player.set_media(Media)
+# player.play()
+# time.sleep(120)
+
 credentials = oauth2.SpotifyClientCredentials(
 	client_id=c.SPOTIFY_CLIENT_ID,
 	client_secret=c.SPOTIFY_CLIENT_SECRET)
@@ -83,20 +98,10 @@ client = commands.Bot(command_prefix='$')
 print(playlists_table.keys())
 print(username)
 
+# import pafy
+# import vlc
 
 
-youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-video = pafy.new(youtube_URL)
-best = video.getbest()
-playurl = best.url
-
-Instance = vlc.Instance()
-player = Instance.media_player_new()
-Media = Instance.media_new(playurl)
-Media.get_mrl()
-player.set_media(Media)
-player.play()
-time.sleep(120)
 
 @client.event
 async def on_ready():
