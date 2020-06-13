@@ -6,6 +6,7 @@ import config as c
 import youtube_dl
 import random
 import shutil
+import re
 # import spotipy.util as util
 # from bottle import route, run, request
 # from spotipy.oauth2 import SpotifyClientCredentials
@@ -239,31 +240,85 @@ async def yt(ctx, url : str):
     await ctx.send(f'Playing {nname}')
     print('playing\n')
 
-@client.command()
-async def search(ctx, search : str):
-    textToSearch = search
-    query = urllib.parse.quote(textToSearch)
-    youtube_URL = "https://www.youtube.com/results?search_query=" + query
-    response = urllib.request.urlopen(youtube_URL)
-    html = response.read()
-    soup = BeautifulSoup(html, 'html.parser')
-    youtubeResults = []
-    for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-        if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
-            youtubeResults.append('https://www.youtube.com' + vid['href'])
-            print('https://www.youtube.com' + vid['href'])
 
-    # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-    url = youtubeResults[0]
+@client.command(pass_context=True)
+async def search(ctx, search : str):
+    regex = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
+    is_url = re.match(regex, search) is not None
+    url = ""
+    if not is_url:
+        textToSearch = search
+        query = urllib.parse.quote(textToSearch)
+        youtube_URL = "https://www.youtube.com/results?search_query=" + query
+        response = urllib.request.urlopen(youtube_URL)
+        html = response.read()
+        soup = BeautifulSoup(html, 'html.parser')
+        youtubeResults = []
+        for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+            if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
+                youtubeResults.append('https://www.youtube.com' + vid['href'])
+                print('https://www.youtube.com' + vid['href'])
+
+        # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
+        url = youtubeResults[0]
+    else:
+        url = search
+    def check_queue():
+        Queue_infile = os.path.isdir('./Queue')
+        if Queue_infile is True:
+            DIR = os.path.abspath(os.path.realpath('Queue'))
+            length = len(os.listdir(DIR))
+            still_q = length - 1
+            try:
+                first_file = os.listdir(DIR)[0]
+            except:
+                print("No more queue song(s)")
+                queues.clear()
+                return
+            main_location = os.path.dirname(os.path.realpath(__file__))
+            song_path = os.path.abspath(os.path.realpath('Queue') + '\\' + first_file)
+            if length != 0:
+                print('Song done, playing next queued')
+                print(f'Songs still in queue: {still_q}')
+                song_there = os.path.isfile('song.mp3')
+                if song_there:
+                    os.remove('song.mp3')
+                shutil.move(song_path, main_location)
+                for file in os.listdir('./'):
+                    if file.endswith('.mp3'):
+                        os.rename(file, 'song.mp3')
+
+                voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
+                voice.source = discord.PCMVolumeTransformer(voice.source)
+                voice.source.volume = 0.5
+
+            else:
+                queues.clear()
+                return
+        else:
+            queues.clear()
+            print('No songs were queued before the ending of the last song\n')
+
     song_there = os.path.isfile('song.mp3')
     try:
         if song_there:
             os.remove("song.mp3")
+            queues.clear()
             print("Removed old song file")
     except PermissionError:
         print("Trying to delete song file, but it's being played")
         await ctx.send("ERROR: Music playing")
         return
+
+
+    Queue_infile = os.path.isdir('./Queue')
+    try:
+        Queue_folder = './Queue'
+        if Queue_infile is True:
+            print('Removed old Queue Folder')
+            shutil.rmtree(Queue_folder)
+    except:
+        print('No old Queue folder')
 
     await ctx.send("Getting song ready now")
     voice = get(client.voice_clients, guild=ctx.guild)
@@ -288,11 +343,12 @@ async def search(ctx, search : str):
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: print(f'{name} has finished playing'))
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.5
 
-    nname = name.rsplit('-', 2)
+    if name:
+        nname = name.rsplit('-', 2)
     await ctx.send(f'Playing {nname}')
     print('playing\n')
     # best = video.getbest()
