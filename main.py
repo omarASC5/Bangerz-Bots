@@ -68,19 +68,19 @@ else:
 
 
 if token:
-    sp = spotipy.Spotify(auth=token)
-    playlists = sp.user_playlists(username)
+    sp2 = spotipy.Spotify(auth=token)
+    playlists = sp2.user_playlists(username)
     for playlist in playlists['items']:
         # print()
         playlists_table[playlist['name']] = set()
         print(playlist['name'])
         # print ('  total tracks', playlist['tracks']['total'])
-        results = sp.playlist(playlist['id'],
+        results = sp2.playlist(playlist['id'],
             fields="tracks,next")
         tracks = results['tracks']
         show_tracks(tracks, playlists_table, playlist['name'])
         while tracks['next']:
-            tracks = sp.next(tracks)
+            tracks = sp2.next(tracks)
             show_tracks(tracks, playlists_table, playlist['name'])
 else:
     print("Can't get token for", username)
@@ -145,6 +145,7 @@ async def join(ctx):
 #     else:
 #         voice = await channel.connect()
 
+
 # TODO: Only allow song commands in the song channel
 @client.command(pass_context=True, aliases=['y'])
 async def yt(ctx, url : str):
@@ -182,17 +183,15 @@ async def yt(ctx, url : str):
 
     voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: print(f'{name} has finished playing'))
     voice.source = discord.PCMVolumeTransformer(voice.source)
-    voice.source.volume = 0.2
+    voice.source.volume = 0.5
 
     nname = name.rsplit('-', 2)
     await ctx.send(f'Playing {nname}')
     print('playing\n')
 
 @client.command()
-async def play(ctx):
-    channel = ctx.message.author.voice.channel
-    vc = await channel.connect()
-    textToSearch = 'toosie slide'
+async def search(ctx, search : str):
+    textToSearch = search
     query = urllib.parse.quote(textToSearch)
     youtube_URL = "https://www.youtube.com/results?search_query=" + query
     response = urllib.request.urlopen(youtube_URL)
@@ -200,30 +199,65 @@ async def play(ctx):
     soup = BeautifulSoup(html, 'html.parser')
     youtubeResults = []
     for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-        youtubeResults.append('https://www.youtube.com' + vid['href'])
-        # print('https://www.youtube.com' + vid['href'])
+        if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
+            youtubeResults.append('https://www.youtube.com' + vid['href'])
+            print('https://www.youtube.com' + vid['href'])
 
     # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-    for youtube_result in youtubeResults:
-        try:
-            video = pafy.new(youtube_result)
-        except:
-            continue
+    url = youtubeResults[0]
+    song_there = os.path.isfile('song.mp3')
+    try:
+        if song_there:
+            os.remove("song.mp3")
+            print("Removed old song file")
+    except PermissionError:
+        print("Trying to delete song file, but it's being played")
+        await ctx.send("ERROR: Music playing")
+        return
 
-    best = video.getbest()
-    playurl = best.url
+    await ctx.send("Getting song ready now")
+    voice = get(client.voice_clients, guild=ctx.guild)
+
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        print('Downloading audio now\n')
+        ydl.download([url])
+
+    for file in os.listdir("./"):
+        if file.endswith('.mp3'):
+            name = file
+            print("Renamed File: {}".format(name), end='\n\n')
+            os.rename(file, 'song.mp3')
+
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: print(f'{name} has finished playing'))
+    voice.source = discord.PCMVolumeTransformer(voice.source)
+    voice.source.volume = 0.5
+
+    nname = name.rsplit('-', 2)
+    await ctx.send(f'Playing {nname}')
+    print('playing\n')
+    # best = video.getbest()
+    # playurl = best.url
 
     # NOTE: THE FOLLOWING TWO LINES OF CODE ARE RESPONSIBLE FOR  VIDEO STREAMING OF YOUTUBE VIDEOS
     # player = vlc.MediaPlayer(playurl)
     # player.play()
 
 
-    Instance = vlc.Instance()
-    player = Instance.media_player_new()
-    Media = Instance.media_new(playurl)
-    Media.get_mrl()
-    player.set_media(Media)
-    vc.play(player.play())
+    # Instance = vlc.Instance()
+    # player = Instance.media_player_new()
+    # Media = Instance.media_new(playurl)
+    # Media.get_mrl()
+    # player.set_media(Media)
+    # vc.play(player.play())
     # player.play()
     # print(r.content)
     # vc.play(sp.start_playback({"context_uri": test_song}))
