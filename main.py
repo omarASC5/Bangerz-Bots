@@ -6,7 +6,6 @@ import config as c
 import youtube_dl
 import random
 import shutil
-import re
 # import spotipy.util as util
 # from bottle import route, run, request
 # from spotipy.oauth2 import SpotifyClientCredentials
@@ -98,7 +97,6 @@ print(username)
 # import vlc
 
 
-
 @client.event
 async def on_ready():
     print("The bot is ready!")
@@ -152,29 +150,7 @@ queues = {}
 # TODO: Only allow song commands in the song channel
 @client.command(pass_context=True)
 async def yt(ctx, search : str):
-    regex = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
-    is_url = re.match(regex, search) is not None
     url = search
-    # if not is_url:
-    #     textToSearch = search
-    #     query = urllib.parse.quote(textToSearch)
-    #     youtube_URL = "https://www.youtube.com/results?search_query=" + query
-    #     response = urllib.request.urlopen(youtube_URL)
-    #     html = response.read()
-    #     soup = BeautifulSoup(html, 'html.parser')
-    #     youtubeResults = []
-    #     for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-    #         if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
-    #             youtubeResults.append('https://www.youtube.com' + vid['href'])
-    #             print('https://www.youtube.com' + vid['href'])
-
-    #     # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-    #     for youtube_result in youtubeResults:
-    #         if 'watch' in youtube_result:
-    #             url = youtube_result
-    #             break
-    # else:
-    #     url = search
     def check_queue():
         Queue_infile = os.path.isdir('./Queue')
         if Queue_infile is True:
@@ -305,29 +281,63 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
     await ctx.send(f'Found playlist: {found_playlist}')
     random_song = random.choice(found_songs)
     await ctx.send(f'Playing: {random_song}')
-    textToSearch = random_song[1] + " " + random_song[0]
-    query = urllib.parse.quote(textToSearch)
-    youtube_URL = "https://www.youtube.com/results?search_query=" + query
-    response = urllib.request.urlopen(youtube_URL)
-    html = response.read()
-    soup = BeautifulSoup(html, 'html.parser')
-    youtubeResults = []
-    for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-        if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
-            youtubeResults.append('https://www.youtube.com' + vid['href'])
-            print('https://www.youtube.com' + vid['href'])
+    url = random_song[1] + " " + random_song[0]
+    def check_queue():
+        Queue_infile = os.path.isdir('./Queue')
+        if Queue_infile is True:
+            DIR = os.path.abspath(os.path.realpath('Queue'))
+            length = len(os.listdir(DIR))
+            still_q = length - 1
+            try:
+                first_file = os.listdir(DIR)[0]
+            except:
+                print("No more queue song(s)")
+                queues.clear()
+                return
+            main_location = os.path.dirname(os.path.realpath(__file__))
+            song_path = os.path.abspath(os.path.realpath('Queue') + '\\' + first_file)
+            if length != 0:
+                print('Song done, playing next queued')
+                print(f'Songs still in queue: {still_q}')
+                song_there = os.path.isfile('song.mp3')
+                if song_there:
+                    os.remove('song.mp3')
+                shutil.move(song_path, main_location)
+                for file in os.listdir('./'):
+                    if file.endswith('.mp3'):
+                        os.rename(file, 'song.mp3')
 
-    # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-    url = youtubeResults[0]
+                voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
+                voice.source = discord.PCMVolumeTransformer(voice.source)
+                voice.source.volume = 0.5
+
+            else:
+                queues.clear()
+                return
+        else:
+            queues.clear()
+            print('No songs were queued before the ending of the last song\n')
+
     song_there = os.path.isfile('song.mp3')
     try:
         if song_there:
             os.remove("song.mp3")
+            queues.clear()
             print("Removed old song file")
     except PermissionError:
         print("Trying to delete song file, but it's being played")
         await ctx.send("ERROR: Music playing")
         return
+
+
+    Queue_infile = os.path.isdir('./Queue')
+    try:
+        Queue_folder = './Queue'
+        if Queue_infile is True:
+            print('Removed old Queue Folder')
+            shutil.rmtree(Queue_folder)
+    except:
+        print('No old Queue folder')
 
     await ctx.send("Getting song ready now")
     voice = get(client.voice_clients, guild=ctx.guild)
@@ -340,6 +350,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        'default_search': 'ytsearch'
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -352,13 +363,61 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: print(f'{name} has finished playing'))
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.5
 
-    nname = name.rsplit('-', 2)
+    if name:
+        nname = name.rsplit('-', 2)
     await ctx.send(f'Playing {nname}')
     print('playing\n')
+    
+    def q2(search):
+        Queue_infile = os.path.isdir('./Queue')
+        if Queue_infile is False:
+            os.mkdir('Queue')
+
+        DIR = os.path.abspath(os.path.realpath('Queue'))
+        q_num = len(os.listdir(DIR))
+        q_num += 1
+        add_queue = True
+
+        while add_queue:
+            if q_num in queues:
+                q_num += 1
+            else:
+                add_queue = False
+                queues[q_num] = q_num
+
+        queue_path = os.path.abspath(os.path.realpath('Queue') + f'\song{q_num}.%(ext)s')
+
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'quiet': True,
+            'outtmpl': queue_path,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'default_search': 'ytsearch'
+        }
+
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            print('Downloading audio now\n')
+            ydl.download([url])
+        # await ctx.send('Adding song ' + str(q_num) + ' to the queue')
+
+        print('Song added to queue')
+
+    q_num = 0
+    # If the queue is empty add 10 more songs
+    while q_num >= 0 and q_num < 3:
+        # for i in range(1):
+        random_song = random.choice(found_songs)
+        url = random_song[1] + " " + random_song[0]
+        q2(url)
+        q_num += 1
     # search(random_song[1])
 
 @client.command(pass_context=True, aliases=['pa, pau'])
@@ -412,30 +471,7 @@ async def leave(ctx):
 
 @client.command(pass_context=True, aliases=['q, que'])
 async def queue(ctx, search : str):
-    regex = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
-    is_url = re.match(regex, search) is not None
     url = search
-    # if not is_url:
-    #     textToSearch = search
-    #     query = urllib.parse.quote(textToSearch)
-    #     youtube_URL = "https://www.youtube.com/results?search_query=" + query
-    #     response = urllib.request.urlopen(youtube_URL)
-    #     html = response.read()
-    #     soup = BeautifulSoup(html, 'html.parser')
-    #     youtubeResults = []
-    #     for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-    #         if not vid['href'].startswith("https://googleads.g.doubleclick.net/"):
-    #             youtubeResults.append('https://www.youtube.com' + vid['href'])
-    #             print('https://www.youtube.com' + vid['href'])
-
-    #     # youtube_URL = "https://www.youtube.com/watch?v=xWggTb45brM"
-    #     for youtube_result in youtubeResults:
-    #         if 'watch' in youtube_result:
-    #             url = youtube_result
-    #             break
-    # else:
-    #     url = search
-
     Queue_infile = os.path.isdir('./Queue')
     if Queue_infile is False:
         os.mkdir('Queue')
@@ -472,11 +508,4 @@ async def queue(ctx, search : str):
     await ctx.send('Adding song ' + str(q_num) + ' to the queue')
 
     print('Song added to queue')
-# @client.command(pass_context=True)
-# async def yt(ctx, url):
-#     # TODO: https://www.youtube.com/watch?v=Bp9SZYqIWIM
-#     vc = await channel.connect()
-#     vc.play(discord.FFmpegPCMAudio(executable="C:/path/ffmpeg.exe", source="mp3.mp3"))
-
-# client.add_cog(YTDLSource(client))
 client.run(c.DISCORD_TOKEN)
