@@ -509,17 +509,18 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
         q2(url)
         return random_song
 
-    for _ in range(10):
+    for _ in range(15):
         next_song_name = next_song()
         # Playing next: {song_name} by {artist}
         await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
 
     while True:
-        for _ in range(5):
+        # TODO: Limit / Cap the queue to 30 songs here
+        for _ in range(2):
             next_song_name = next_song()
             # Playing next: {song_name} by {artist}
             await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
-            await asyncio.sleep(250)
+        await asyncio.sleep(250)
     # If the queue is empty add 10 more songs
 
     # search(random_song[1])
@@ -572,9 +573,26 @@ async def leave(ctx):
     voice_client = guild.voice_client
     await voice_client.disconnect()
 
+# TODO: Current Song
+@client.command(pass_context=True, aliases=['c, cur', 'curr'])
+async def current(ctx):
+    await ctx.send('Currently playing: song_name by artist_name')
 
+# TODO: Clear Queue
+@client.command(pass_context=True, aliases=['cl, clea',])
+async def clear(ctx):
+    await ctx.send('Queue cleared!')
+
+
+# TODO: Print out the songs in the queue
 @client.command(pass_context=True, aliases=['q, que'])
 async def queue(ctx, search : str):
+    await ctx.send('Songs in the queue:')
+    # TODO: Print queued songs here
+
+# TODO: Rename Command
+@client.command(pass_context=True, aliases=['play_n, play_nex'])
+async def play_next(ctx, search : str):
     url = search
     Queue_infile = os.path.isdir('./Queue')
     if Queue_infile is False:
@@ -612,4 +630,5 @@ async def queue(ctx, search : str):
     await ctx.send('Adding song ' + str(q_num) + ' to the queue')
 
     print('Song added to queue')
+
 client.run(c.DISCORD_TOKEN)
