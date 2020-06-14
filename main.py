@@ -509,12 +509,17 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
         q2(url)
         return random_song
 
-    next_song()
-    while True:
+    for _ in range(10):
         next_song_name = next_song()
         # Playing next: {song_name} by {artist}
         await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
-        await asyncio.sleep(250)
+
+    while True:
+        for _ in range(5):
+            next_song_name = next_song()
+            # Playing next: {song_name} by {artist}
+            await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
+            await asyncio.sleep(250)
     # If the queue is empty add 10 more songs
 
     # search(random_song[1])
