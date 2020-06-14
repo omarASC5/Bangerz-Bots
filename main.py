@@ -48,62 +48,55 @@ credentials = oauth2.SpotifyClientCredentials(
 token = credentials.get_access_token(as_dict=False)
 spotify = spotipy.Spotify(auth=token)
 playlists_table = {}
-username = ""
-
+f = open("username.txt", "r")
+sp_username = str(f.readline())
 # TODO: MAKE PLAYLISTS PUBLIC THAT YOU WANT TO BE ACCESSIBLE THROUGH THE COMMAND
-
-def show_tracks(tracks, playlists_table, playlist_name):
-    for i, item in enumerate(tracks['items']):
-        track = item['track']
-        try:
-            playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
-        except:
-            continue
-        # print()
-        # print("   %d %32.32s %s" % (i, track['artists'][0]['name'],track['name']))
-
-
-if len(sys.argv) > 1:
-    username = sys.argv[1]
-else:
-    print("Whoops, need your username!")
-    print("usage: python user_playlists.py [username]")
-    sys.exit()
-
-
-if token:
-    sp2 = spotipy.Spotify(auth=token)
-    playlists = sp2.user_playlists(username)
-    for playlist in playlists['items']:
-        # print()
-        playlists_table[playlist['name']] = list()
-        print(playlist['name'])
-        # print ('  total tracks', playlist['tracks']['total'])
-        results = sp2.playlist(playlist['id'],
-            fields="tracks,next")
-        tracks = results['tracks']
-        show_tracks(tracks, playlists_table, playlist['name'])
-        while tracks['next']:
-            tracks = sp2.next(tracks)
+if sp_username != "":
+    def show_tracks(tracks, playlists_table, playlist_name):
+        for i, item in enumerate(tracks['items']):
+            track = item['track']
+            try:
+                playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
+            except:
+                continue
+            # print()
+            # print("   %d %32.32s %s" % (i, track['artists'][0]['name'],track['name']))
+    if token:
+        sp2 = spotipy.Spotify(auth=token)
+        playlists = sp2.user_playlists(sp_username)
+        for playlist in playlists['items']:
+            # print()
+            playlists_table[playlist['name']] = list()
+            print(playlist['name'])
+            # print ('  total tracks', playlist['tracks']['total'])
+            results = sp2.playlist(playlist['id'],
+                fields="tracks,next")
+            tracks = results['tracks']
             show_tracks(tracks, playlists_table, playlist['name'])
-else:
-    print("Can't get token for", username)
+            while tracks['next']:
+                tracks = sp2.next(tracks)
+                show_tracks(tracks, playlists_table, playlist['name'])
+    else:
+        print("Can't get token for", sp_username)
+
+    print(playlists_table.keys())
+    print(sp_username)
+
 
 # print('yerrrr', playlists.username)
 #sp.start_playback({"context_uri": test_song})
 client = commands.Bot(command_prefix='$')
-print(playlists_table.keys())
-print(username)
+
 
 # import pafy
 # import vlc
-
+    
 
 @client.event
 async def on_ready():
     print("The bot is ready!")
     await client.change_presence(activity=discord.Game(name="Playing straight 🔥🔥🔥"))
-
+    
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -120,6 +113,76 @@ async def on_message(message):
     if 'dad' in message.content.lower():
         await message.channel.send("Big Daddy, what up?")  
     await client.process_commands(message)
+
+@client.command(pass_context=True)
+async def username(ctx, new_username=''):
+    sp_username = str(new_username)
+    f = open('username.txt', 'w')
+    f.write(sp_username)
+    f.close()
+    await ctx.send(f'Username {sp_username} successfully stored!')
+    playlists_table.clear()
+    if sp_username != "":
+        def show_tracks(tracks, playlists_table, playlist_name):
+            for i, item in enumerate(tracks['items']):
+                track = item['track']
+                try:
+                    playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
+                except:
+                    continue
+                # print()
+                # print("   %d %32.32s %s" % (i, track['artists'][0]['name'],track['name']))
+        if token:
+            sp2 = spotipy.Spotify(auth=token)
+            playlists = sp2.user_playlists(sp_username)
+            for playlist in playlists['items']:
+                # print()
+                playlists_table[playlist['name']] = list()
+                print(playlist['name'])
+                # print ('  total tracks', playlist['tracks']['total'])
+                results = sp2.playlist(playlist['id'],
+                    fields="tracks,next")
+                tracks = results['tracks']
+                show_tracks(tracks, playlists_table, playlist['name'])
+                while tracks['next']:
+                    tracks = sp2.next(tracks)
+                    show_tracks(tracks, playlists_table, playlist['name'])
+        else:
+            print("Can't get token for", sp_username)
+
+        print(playlists_table.keys())
+        print(sp_username)
+    else:
+        
+        def show_tracks(tracks, playlists_table, playlist_name):
+            for i, item in enumerate(tracks['items']):
+                track = item['track']
+                try:
+                    playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
+                except:
+                    continue
+                # print()
+                # print("   %d %32.32s %s" % (i, track['artists'][0]['name'],track['name']))
+        if token:
+            sp2 = spotipy.Spotify(auth=token)
+            playlists = sp2.user_playlists(sp_username)
+            for playlist in playlists['items']:
+                # print()
+                playlists_table[playlist['name']] = list()
+                print(playlist['name'])
+                # print ('  total tracks', playlist['tracks']['total'])
+                results = sp2.playlist(playlist['id'],
+                    fields="tracks,next")
+                tracks = results['tracks']
+                show_tracks(tracks, playlists_table, playlist['name'])
+                while tracks['next']:
+                    tracks = sp2.next(tracks)
+                    show_tracks(tracks, playlists_table, playlist['name'])
+        else:
+            print("Can't get token for", sp_username)
+
+        print(playlists_table.keys())
+        print(sp_username)
 
 @client.command()
 async def ping(ctx):
@@ -263,11 +326,14 @@ async def yt(ctx, search : str):
 
 @client.command()
 async def sp_playlists(ctx):
+    if sp_username == "":
+        await ctx.send('Please set a spotify username with command: $username [your_username]')
+
     index = 1
     for playlist in playlists_table.keys():
         await ctx.send(f'{index}. {playlist}')
         index += 1
-    await ctx.send('Please call command: sp_playlist (without the s) with a playlist number')
+    await ctx.send('Please call command: $sp_playlist (without the s at the end) with a playlist number')
 
 @client.command()
 async def sp_playlist(ctx, index : int, shuffle = ""):
@@ -414,13 +480,16 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
 
     def next_song():
         random_song = random.choice(found_songs)
-        print('random_song', random_song)
+        print('playing', random_song)
         url = random_song[1] + " " + random_song[0]
         q2(url)
+        return random_song
 
     next_song()
     while True:
-        next_song()
+        next_song_name = next_song()
+        # Playing next: {song_name} by {artist}
+        await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
         await asyncio.sleep(250)
     # If the queue is empty add 10 more songs
 
