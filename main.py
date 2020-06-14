@@ -215,6 +215,18 @@ queues = {}
 # TODO: Only allow song commands in the song channel
 @client.command(pass_context=True)
 async def yt(ctx, search : str):
+    global voice
+    channel = ctx.message.author.voice.channel
+    if not channel:
+        await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
+        return
+    voice = get(client.voice_clients, guild=ctx.guild)
+
+    if voice and voice.is_connected():
+        await voice.move_to(channel)
+    else:
+        voice = await channel.connect()
+
     url = search
     def check_queue():
         Queue_infile = os.path.isdir('./Queue')
@@ -303,7 +315,7 @@ async def yt(ctx, search : str):
 
     if name:
         nname = name.rsplit('-', 2)
-    await ctx.send(f'Playing {nname}')
+    await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
     print('playing\n')
     # best = video.getbest()
     # playurl = best.url
@@ -337,6 +349,18 @@ async def sp_playlists(ctx):
 
 @client.command()
 async def sp_playlist(ctx, index : int, shuffle = ""):
+    global voice
+    channel = ctx.message.author.voice.channel
+    if not channel:
+        await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
+        return
+    voice = get(client.voice_clients, guild=ctx.guild)
+
+    if voice and voice.is_connected():
+        await voice.move_to(channel)
+    else:
+        voice = await channel.connect()
+
     i = 1
     found_playlist = ''
     found_songs = []
@@ -348,7 +372,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
         i += 1
     await ctx.send(f'Found playlist: {found_playlist}')
     random_song = random.choice(found_songs)
-    await ctx.send(f'Playing: {random_song}')
+    await ctx.send(f'Playing: {random_song[1]} by {random_song[0]}')
     url = random_song[1] + " " + random_song[0]
     def check_queue():
         Queue_infile = os.path.isdir('./Queue')
@@ -437,7 +461,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
 
     if name:
         nname = name.rsplit('-', 2)
-    await ctx.send(f'Playing {nname}')
+    await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
     print('playing\n')
     
     def q2(url):
@@ -522,20 +546,20 @@ async def resume(ctx):
         print("Music is not paused")
         await ctx.send("Music is not paused")
 
-@client.command(pass_context=True, aliases=['s, sto'])
-async def stop(ctx):
+@client.command(pass_context=True, aliases=['s, ski'])
+async def skip(ctx):
     voice = get(client.voice_clients, guild=ctx.guild)
     
     queues.clear()
     
     if voice and voice.is_playing():
-        print("Music stopped")
+        print("Music skipped")
         voice.stop()
-        await ctx.send("Music stopped")
+        await ctx.send("Music skipped")
 
     else:
-        print("No music playing: failed to stop")
-        await ctx.send("No music playing: failed to stop")
+        print("No music playing: failed to skip")
+        await ctx.send("No music playing: failed to skip")
 
 @client.command()
 async def leave(ctx):
