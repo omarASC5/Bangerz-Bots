@@ -8,7 +8,6 @@ import random
 import asyncio
 import shutil
 import time
-print(youtube_dl.__version__)
 # import spotipy.util as util
 # from bottle import route, run, request
 # from spotipy.oauth2 import SpotifyClientCredentials
