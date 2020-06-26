@@ -507,7 +507,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
         q2(url)
         return random_song
 
-    for _ in range(5):
+    for _ in range(3):
         next_song_name = next_song()
         # Playing next: {song_name} by {artist}
         # await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
