@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 import os
-import config as c
+# import config as c
 import youtube_dl
 import random
 import asyncio
