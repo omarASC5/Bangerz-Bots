@@ -1,0 +1,7 @@
+discord.py
+youtube_dl
+shutil
+os
+random
+asynio
+time
