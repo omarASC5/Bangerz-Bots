@@ -42,8 +42,8 @@ import asyncio
 # time.sleep(120)
 
 credentials = oauth2.SpotifyClientCredentials(
-	client_id=c.SPOTIFY_CLIENT_ID,
-	client_secret=c.SPOTIFY_CLIENT_SECRET)
+	client_id=SPOTIFY_CLIENT_ID,
+	client_secret=SPOTIFY_CLIENT_SECRET)
 
 token = credentials.get_access_token(as_dict=False)
 spotify = spotipy.Spotify(auth=token)
@@ -631,4 +631,4 @@ async def play_next(ctx, search : str):
 
 
     
-client.run(c.DISCORD_TOKEN)
+client.run(DISCORD_TOKEN)
