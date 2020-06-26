@@ -32,11 +32,11 @@ import sys
 import spotipy
 import spotipy.oauth2 as oauth2
 
-import pafy
-import vlc
+# import pafy
+# import vlc
 
 import urllib.request
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 
 import asyncio
 # time.sleep(120)
