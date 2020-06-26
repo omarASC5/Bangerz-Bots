@@ -313,7 +313,7 @@ async def yt(ctx, search : str):
 
     if name:
         nname = name.rsplit('-', 2)
-    await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
+        await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
     print('playing\n')
     # best = video.getbest()
     # playurl = best.url
