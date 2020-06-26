@@ -459,7 +459,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
 
     if name:
         nname = name.rsplit('-', 2)
-    await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
+        await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
     print('playing\n')
     
     def q2(url):
