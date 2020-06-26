@@ -86,8 +86,6 @@ if sp_username != "":
 # print('yerrrr', playlists.username)
 #sp.start_playback({"context_uri": test_song})
 client = commands.Bot(command_prefix='$')
-
-
 # import pafy
 # import vlc
     
@@ -509,17 +507,17 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
         q2(url)
         return random_song
 
-    for _ in range(15):
+    for _ in range(5):
         next_song_name = next_song()
         # Playing next: {song_name} by {artist}
-        await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
+        # await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
 
     while True:
         # TODO: Limit / Cap the queue to 30 songs here
-        for _ in range(2):
-            next_song_name = next_song()
+        # for _ in range(2):
+        next_song_name = next_song()
             # Playing next: {song_name} by {artist}
-            await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
+            # await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
         await asyncio.sleep(250)
     # If the queue is empty add 10 more songs
 
@@ -631,4 +629,6 @@ async def play_next(ctx, search : str):
 
     print('Song added to queue')
 
+
+    
 client.run(c.DISCORD_TOKEN)
