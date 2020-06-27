@@ -212,13 +212,19 @@ async def yt(ctx, search : str):
 
 @client.command()
 async def sp_playlists(ctx):
-    if sp_username == "":
+    if spotify_processor.spotify_username == "":
         await ctx.send('Please set a spotify username with command: $username [your_username]')
+    else:
 
-    index = 1
-    for playlist in playlists_table.keys():
-        await ctx.send(f'{index}. {playlist}')
-        index += 1
+        # Gets the public playlist names under the account
+        playlists_names = spotify_processor.playlists_names
+
+        # Print the playlists under the account
+        str_to_print = '';
+        for val, playlists_name in enumerate(playlists_names):
+            str_to_print += f'{val + 1}. {playlists_name}\n'
+        await ctx.send(f'''```{str_to_print}```''')
+
     await ctx.send('Please call command: $sp_playlist (without the s at the end) with a playlist number')
 
 @client.command()

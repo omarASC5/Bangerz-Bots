@@ -18,7 +18,6 @@ class Music:
 			'no_warnings': True,
 			'quiet': True
     }
-		
 	
 	def download_song(self, url, video_mode = False):
 		'''Function that downloads a song by search team or URL.'''
