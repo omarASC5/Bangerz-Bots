@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord.utils import get
 import os
 from SpotifyProcessor import SpotifyProcessor
+from Music import Music
 import youtube_dl
 import random
 import asyncio
@@ -188,20 +189,8 @@ async def yt(ctx, search : str):
     await ctx.send("Getting song ready now")
     voice = get(client.voice_clients, guild=ctx.guild)
 
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'quiet': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'default_search': 'ytsearch'
-    }
-
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        print('Downloading audio now\n')
-        ydl.download([url])
+    music = Music()
+    music.download_song(url)
 
     for file in os.listdir("./"):
         if file.endswith('.mp3'):
@@ -217,24 +206,6 @@ async def yt(ctx, search : str):
         nname = name.rsplit('-', 2)
         await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
     print('playing\n')
-    # best = video.getbest()
-    # playurl = best.url
-
-    # NOTE: THE FOLLOWING TWO LINES OF CODE ARE RESPONSIBLE FOR  VIDEO STREAMING OF YOUTUBE VIDEOS
-    # player = vlc.MediaPlayer(playurl)
-    # player.play()
-
-
-    # Instance = vlc.Instance()
-    # player = Instance.media_player_new()
-    # Media = Instance.media_new(playurl)
-    # Media.get_mrl()
-    # player.set_media(Media)
-    # vc.play(player.play())
-    # player.play()
-    # print(r.content)
-    # vc.play(sp.start_playback({"context_uri": test_song}))
-    # vc.play(discord.FFmpegPCMAudio('Nick Jonas - The Difference (Audio).mp3'), after=lambda e: print('done', e))
 
 @client.command()
 async def sp_playlists(ctx):
@@ -481,6 +452,7 @@ async def current(ctx):
 # TODO: Clear Queue
 @client.command(pass_context=True, aliases=['cl, clea',])
 async def clear(ctx):
+    queues.clear()
     await ctx.send('Queue cleared!')
 
 
