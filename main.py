@@ -239,7 +239,8 @@ async def yt(ctx, search : str):
                 queues.clear()
                 return
             main_location = os.path.dirname(os.path.realpath(__file__))
-            song_path = os.path.abspath(os.path.realpath('Queue') + '\\' + first_file)
+            
+            song_path = os.path.abspath(os.path.realpath('Queue') + '/' + first_file)
             if length != 0:
                 print('Song done, playing next queued')
                 print(f'Songs still in queue: {still_q}')
@@ -385,7 +386,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
                 queues.clear()
                 return
             main_location = os.path.dirname(os.path.realpath(__file__))
-            song_path = os.path.abspath(os.path.realpath('Queue') + '\\' + first_file)
+            song_path = os.path.abspath(os.path.realpath('Queue') + '/' + first_file)
             if length != 0:
                 print('Song done, playing next queued')
                 print(f'Songs still in queue: {still_q}')
@@ -479,7 +480,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
                 add_queue = False
                 queues[q_num] = q_num
 
-        queue_path = os.path.abspath(os.path.realpath('Queue') + f'\song{q_num}.%(ext)s')
+        queue_path = os.path.abspath(os.path.realpath('Queue') + f'/song{q_num}.%(ext)s')
 
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -514,8 +515,8 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
 
     while True:
         # TODO: Limit / Cap the queue to 30 songs here
-        # for _ in range(2):
-        next_song_name = next_song()
+        for _ in range(2):
+            next_song_name = next_song()
             # Playing next: {song_name} by {artist}
             # await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
         await asyncio.sleep(250)
@@ -608,7 +609,7 @@ async def play_next(ctx, search : str):
             add_queue = False
             queues[q_num] = q_num
 
-    queue_path = os.path.abspath(os.path.realpath('Queue') + f'\song{q_num}.%(ext)s')
+    queue_path = os.path.abspath(os.path.realpath('Queue') + f'/song{q_num}.%(ext)s')
 
     ydl_opts = {
         'format': 'bestaudio/best',
