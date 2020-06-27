@@ -2,93 +2,34 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 import os
-# import config as c
+from SpotifyProcessor import SpotifyProcessor
 import youtube_dl
 import random
 import asyncio
 import shutil
 import time
-# import spotipy.util as util
-# from bottle import route, run, request
-# from spotipy.oauth2 import SpotifyClientCredentials
-# import requests
-# import user_playlists as playlists 
-# pip install asyncio
-# python3 -m pip install discord.py
-# python3 -m pip install spotipy
-# python3 -m pip install youtubedl
-players = {}
-
-test_song = 'spotify:track:4evmHXcjt3bTUHD1cvny97'
-
-# client_credentials_manager = SpotifyClientCredentials(c.SPOTIFY_CLIENT_ID, client_secret=c.SPOTIFY_CLIENT_SECRET)
-# sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-
-# results = sp.search(q='Drake', limit=20)
-# for i, t in enumerate(results['tracks']['items']):
-#     print (' ', i, t['name'])
-
 import sys
 import spotipy
 import spotipy.oauth2 as oauth2
-
-# import pafy
-# import vlc
-
-import urllib.request
-# from bs4 import BeautifulSoup
-
 import asyncio
-# time.sleep(120)
 
-credentials = oauth2.SpotifyClientCredentials(
-	client_id=os.environ["SPOTIFY_CLIENT_ID"],
-	client_secret=os.environ["SPOTIFY_CLIENT_SECRET"])
+spotify_processor = SpotifyProcessor(
+    os.environ["SPOTIFY_CLIENT_ID"],
+    os.environ["SPOTIFY_CLIENT_SECRET"],
+    str(open("username.txt", "r").readline())
+)
 
-token = credentials.get_access_token(as_dict=False)
-spotify = spotipy.Spotify(auth=token)
-playlists_table = {}
-f = open("username.txt", "r")
-sp_username = str(f.readline())
-# TODO: MAKE PLAYLISTS PUBLIC THAT YOU WANT TO BE ACCESSIBLE THROUGH THE COMMAND
-if sp_username != "":
-    def show_tracks(tracks, playlists_table, playlist_name):
-        for i, item in enumerate(tracks['items']):
-            track = item['track']
-            try:
-                playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
-            except:
-                continue
-            # print()
-            # print("   %d %32.32s %s" % (i, track['artists'][0]['name'],track['name']))
-    if token:
-        sp2 = spotipy.Spotify(auth=token)
-        playlists = sp2.user_playlists(sp_username)
-        for playlist in playlists['items']:
-            # print()
-            playlists_table[playlist['name']] = list()
-            print(playlist['name'])
-            # print ('  total tracks', playlist['tracks']['total'])
-            results = sp2.playlist(playlist['id'],
-                fields="tracks,next")
-            tracks = results['tracks']
-            show_tracks(tracks, playlists_table, playlist['name'])
-            while tracks['next']:
-                tracks = sp2.next(tracks)
-                show_tracks(tracks, playlists_table, playlist['name'])
-    else:
-        print("Can't get token for", sp_username)
+# Loads the list of playlist names
+spotify_processor.fill_playlists_names()
 
-    print(playlists_table.keys())
-    print(sp_username)
+# Gets the public playlist names under the account
+playlists_names = spotify_processor.playlists_names
 
+# Print the playlists under the account
+for val, playlists_name in enumerate(playlists_names):
+    print(f'{val + 1}.', playlists_name)
 
-# print('yerrrr', playlists.username)
-#sp.start_playback({"context_uri": test_song})
 client = commands.Bot(command_prefix='$')
-# import pafy
-# import vlc
-    
 
 @client.event
 async def on_ready():
@@ -118,69 +59,29 @@ async def username(ctx, new_username=''):
     f = open('username.txt', 'w')
     f.write(sp_username)
     f.close()
+
+    # Set the username of the user to the object
+    spotify_processor.spotify_username = sp_username
+
+    # CLear all exisiting variables and recreate with new username
+    spotify_processor.__init__(
+        os.environ["SPOTIFY_CLIENT_ID"],
+        os.environ["SPOTIFY_CLIENT_SECRET"],
+        str(open("username.txt", "r").readline())
+    )
+
+    # Loads the list of playlist names
+    spotify_processor.fill_playlists_names()
+
+    # Gets the public playlist names under the account
+    playlists_names = spotify_processor.playlists_names
+
+    # Print the playlists under the account
+    for val, playlists_name in enumerate(playlists_names):
+        print(f'{val + 1}.', playlists_name)
+
     await ctx.send(f'Username {sp_username} successfully stored!')
-    playlists_table.clear()
-    if sp_username != "":
-        def show_tracks(tracks, playlists_table, playlist_name):
-            for i, item in enumerate(tracks['items']):
-                track = item['track']
-                try:
-                    playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
-                except:
-                    continue
-                # print()
-                # print("   %d %32.32s %s" % (i, track['artists'][0]['name'],track['name']))
-        if token:
-            sp2 = spotipy.Spotify(auth=token)
-            playlists = sp2.user_playlists(sp_username)
-            for playlist in playlists['items']:
-                # print()
-                playlists_table[playlist['name']] = list()
-                print(playlist['name'])
-                # print ('  total tracks', playlist['tracks']['total'])
-                results = sp2.playlist(playlist['id'],
-                    fields="tracks,next")
-                tracks = results['tracks']
-                show_tracks(tracks, playlists_table, playlist['name'])
-                while tracks['next']:
-                    tracks = sp2.next(tracks)
-                    show_tracks(tracks, playlists_table, playlist['name'])
-        else:
-            print("Can't get token for", sp_username)
-
-        print(playlists_table.keys())
-        print(sp_username)
-    else:
-        
-        def show_tracks(tracks, playlists_table, playlist_name):
-            for i, item in enumerate(tracks['items']):
-                track = item['track']
-                try:
-                    playlists_table[playlist_name].append((track['artists'][0]['name'], track['name']))
-                except:
-                    continue
-                # print()
-                # print("   %d %32.32s %s" % (i, track['artists'][0]['name'],track['name']))
-        if token:
-            sp2 = spotipy.Spotify(auth=token)
-            playlists = sp2.user_playlists(sp_username)
-            for playlist in playlists['items']:
-                # print()
-                playlists_table[playlist['name']] = list()
-                print(playlist['name'])
-                # print ('  total tracks', playlist['tracks']['total'])
-                results = sp2.playlist(playlist['id'],
-                    fields="tracks,next")
-                tracks = results['tracks']
-                show_tracks(tracks, playlists_table, playlist['name'])
-                while tracks['next']:
-                    tracks = sp2.next(tracks)
-                    show_tracks(tracks, playlists_table, playlist['name'])
-        else:
-            print("Can't get token for", sp_username)
-
-        print(playlists_table.keys())
-        print(sp_username)
+    
 
 @client.command()
 async def ping(ctx):
