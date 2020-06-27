@@ -88,45 +88,38 @@ async def username(ctx, new_username=''):
 async def ping(ctx):
     await ctx.send('Pong! {0}'.format(round(client.latency, 1)))
 
-@client.command(pass_context=True, aliases=['j, joi'])
-async def join(ctx):
+async def bot_join_voice(ctx):
+    '''A helper function that allows to join the voice channel the user is in.
+        If the user is not currently in a voice channel, it will say that.'''
     global voice
-    channel = ctx.message.author.voice.channel
-    if not channel:
-        await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
-        return
-    voice = get(client.voice_clients, guild=ctx.guild)
+    message_to_send = ''
+    if ctx.author.voice is None or ctx.author.voice.channel is None:
+        message_to_send = \
+        "You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:"
+        await ctx.send(message_to_send)
+        return False
 
+    channel = ctx.message.author.voice.channel
+    voice = get(client.voice_clients, guild=ctx.guild)
     if voice and voice.is_connected():
         await voice.move_to(channel)
     else:
         voice = await channel.connect()
-# @client.command()
-# async def join(ctx):
-#     channel = ctx.message.author.voice.channel
-#     if not channel:
-#         await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
-#         return
-    
-#     else:
-#         voice = await channel.connect()
+    return voice
+
+
+@client.command(pass_context=True, aliases=['j, joi'])
+async def join(ctx):
+    await bot_join_voice(ctx)
 
 queues = {}
 # TODO: Only allow song commands in the song channel
 @client.command(pass_context=True)
 async def yt(ctx, search : str):
-    global voice
-    channel = ctx.message.author.voice.channel
-    if not channel:
-        await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
+    voice = await bot_join_voice(ctx)
+    if not voice:
         return
-    voice = get(client.voice_clients, guild=ctx.guild)
-
-    if voice and voice.is_connected():
-        await voice.move_to(channel)
-    else:
-        voice = await channel.connect()
-
+        
     url = search
     def check_queue():
         Queue_infile = os.path.isdir('./Queue')
@@ -220,17 +213,9 @@ async def sp_playlists(ctx):
 
 @client.command()
 async def sp_playlist(ctx, index : int, shuffle = ""):
-    global voice
-    channel = ctx.message.author.voice.channel
-    if not channel:
-        await ctx.send("You aren't connected to a voice channel, my friend. :face_with_hand_over_mouth:")
+    voice = await bot_join_voice(ctx)
+    if not voice:
         return
-    voice = get(client.voice_clients, guild=ctx.guild)
-
-    if voice and voice.is_connected():
-        await voice.move_to(channel)
-    else:
-        voice = await channel.connect()
 
     i = 1
     found_playlist = ''
