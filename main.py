@@ -13,6 +13,7 @@ import sys
 import spotipy
 import spotipy.oauth2 as oauth2
 import asyncio
+from config import *
 
 spotify_processor = SpotifyProcessor(
     os.environ["SPOTIFY_CLIENT_ID"],
@@ -83,10 +84,69 @@ async def username(ctx, new_username=''):
 
     await ctx.send(f'Username {sp_username} successfully stored!')
     
-
 @client.command()
 async def ping(ctx):
     await ctx.send('Pong! {0}'.format(round(client.latency, 1)))
+
+@client.command(pass_context=True, aliases=['j, joi'])
+async def join(ctx):
+    await bot_join_voice(ctx)
+
+queues = {}
+
+def check_queue(voice):
+    Queue_infile = os.path.isdir('./Queue')
+    if Queue_infile is True:
+        DIR = os.path.abspath(os.path.realpath('Queue'))
+        length = len(os.listdir(DIR))
+        still_q = length - 1
+
+        try:
+            first_file = os.listdir(DIR)[0]
+
+        except:
+            print("No more queue song(s)")
+            queues.clear()
+            return
+
+        main_location = os.path.dirname(os.path.realpath(__file__))
+        
+        song_path = os.path.abspath(os.path.realpath('Queue') + '/' + first_file)
+        if length != 0:
+
+            print('Song done, playing next queued')
+            print(f'Songs still in queue: {still_q}')
+            song_there = os.path.isfile('song.mp3')
+
+            if song_there:
+                os.remove('song.mp3')
+
+            shutil.move(song_path, main_location)
+
+            for file in os.listdir('./'):
+                if file.endswith('.mp3'):
+                    os.rename(file, 'song.mp3')
+
+            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(voice))
+            voice.source = discord.PCMVolumeTransformer(voice.source)
+            voice.source.volume = 0.5
+
+        else:
+            queues.clear()
+            return
+    else:
+        queues.clear()
+        print('No songs were queued before the ending of the last song\n')
+
+def bot_remove_old_queue_folder():
+    Queue_infile = os.path.isdir('./Queue')
+    try:
+        Queue_folder = './Queue'
+        if Queue_infile is True:
+            print('Removed old Queue Folder')
+            shutil.rmtree(Queue_folder)
+    except:
+        print('No old Queue folder')
 
 async def bot_join_voice(ctx):
     '''A helper function that allows to join the voice channel the user is in.
@@ -107,12 +167,6 @@ async def bot_join_voice(ctx):
         voice = await channel.connect()
     return voice
 
-
-@client.command(pass_context=True, aliases=['j, joi'])
-async def join(ctx):
-    await bot_join_voice(ctx)
-
-queues = {}
 # TODO: Only allow song commands in the song channel
 @client.command(pass_context=True)
 async def yt(ctx, search : str):
@@ -121,42 +175,6 @@ async def yt(ctx, search : str):
         return
         
     url = search
-    def check_queue():
-        Queue_infile = os.path.isdir('./Queue')
-        if Queue_infile is True:
-            DIR = os.path.abspath(os.path.realpath('Queue'))
-            length = len(os.listdir(DIR))
-            still_q = length - 1
-            try:
-                first_file = os.listdir(DIR)[0]
-            except:
-                print("No more queue song(s)")
-                queues.clear()
-                return
-            main_location = os.path.dirname(os.path.realpath(__file__))
-            
-            song_path = os.path.abspath(os.path.realpath('Queue') + '/' + first_file)
-            if length != 0:
-                print('Song done, playing next queued')
-                print(f'Songs still in queue: {still_q}')
-                song_there = os.path.isfile('song.mp3')
-                if song_there:
-                    os.remove('song.mp3')
-                shutil.move(song_path, main_location)
-                for file in os.listdir('./'):
-                    if file.endswith('.mp3'):
-                        os.rename(file, 'song.mp3')
-
-                voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
-                voice.source = discord.PCMVolumeTransformer(voice.source)
-                voice.source.volume = 0.5
-
-            else:
-                queues.clear()
-                return
-        else:
-            queues.clear()
-            print('No songs were queued before the ending of the last song\n')
 
     song_there = os.path.isfile('song.mp3')
     try:
@@ -169,15 +187,7 @@ async def yt(ctx, search : str):
         await ctx.send("ERROR: Music playing")
         return
 
-
-    Queue_infile = os.path.isdir('./Queue')
-    try:
-        Queue_folder = './Queue'
-        if Queue_infile is True:
-            print('Removed old Queue Folder')
-            shutil.rmtree(Queue_folder)
-    except:
-        print('No old Queue folder')
+    bot_remove_old_queue_folder()
 
     await ctx.send("Getting song ready now")
     voice = get(client.voice_clients, guild=ctx.guild)
@@ -191,7 +201,7 @@ async def yt(ctx, search : str):
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(voice))
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.5
 
@@ -230,42 +240,6 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
     random_song = random.choice(found_songs)
     await ctx.send(f'Playing: {random_song[1]} by {random_song[0]}')
     url = random_song[1] + " " + random_song[0]
-    def check_queue():
-        Queue_infile = os.path.isdir('./Queue')
-        if Queue_infile is True:
-            DIR = os.path.abspath(os.path.realpath('Queue'))
-            length = len(os.listdir(DIR))
-            still_q = length - 1
-            try:
-                first_file = os.listdir(DIR)[0]
-            except:
-                print("No more queue song(s)")
-                queues.clear()
-                return
-            main_location = os.path.dirname(os.path.realpath(__file__))
-            song_path = os.path.abspath(os.path.realpath('Queue') + '/' + first_file)
-            if length != 0:
-                print('Song done, playing next queued')
-                print(f'Songs still in queue: {still_q}')
-                song_there = os.path.isfile('song.mp3')
-                if song_there:
-                    os.remove('song.mp3')
-                shutil.move(song_path, main_location)
-                for file in os.listdir('./'):
-                    if file.endswith('.mp3'):
-                        os.rename(file, 'song.mp3')
-
-                voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
-                voice.source = discord.PCMVolumeTransformer(voice.source)
-                voice.source.volume = 0.5
-
-            else:
-                queues.clear()
-                return
-        else:
-            queues.clear()
-            print('No songs were queued before the ending of the last song\n')
-
     song_there = os.path.isfile('song.mp3')
     try:
         if song_there:
@@ -311,7 +285,7 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue())
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(voice))
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.5
 
@@ -488,6 +462,4 @@ async def play_next(ctx, search : str):
 
     print('Song added to queue')
 
-
-    
 client.run(os.environ["DISCORD_TOKEN"])
