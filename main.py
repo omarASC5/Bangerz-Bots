@@ -193,16 +193,7 @@ def bot_rename_file_song_mp3():
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-# TODO: Only allow song commands in the song channel
-@client.command(pass_context=True)
-async def yt(ctx, search : str):
-    # The bot joins the voice channel, if not already present
-    voice = await bot_join_voice(ctx)
-    if not voice:
-        return
-        
-    url = search
-
+async def bot_queue_song_by_url(ctx, url):
     # Remove the old song file
     await bot_remove_old_song_file()
 
@@ -226,10 +217,41 @@ async def yt(ctx, search : str):
     voice.source.volume = 0.5
 
     # Display the song being played
-    if name:
-        nname = name.rsplit('-', 2)
-        await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
-    print('playing\n')
+    with youtube_dl.YoutubeDL(music.ydl_opts) as ydl:
+        # Store a dictionary with additional info on current song in Music object
+        info_dict = ydl.extract_info(url, download=False)
+        music.info_dict = info_dict
+
+        # Store the song title
+        video_title = info_dict['entries'][0]['title']
+        music.video_title = video_title
+
+        # Store the song title spotify_processor too
+        spotify_processor.current_song = video_title
+
+        # Save the length of the song in music object
+        video_duration = info_dict['entries'][0]['duration']
+        music.video_duration = video_duration
+
+        # Save the URL to the song in the music object
+        web_page_url = info_dict['entries'][0]['webpage_url']
+        music.web_page_url = web_page_url
+
+        # Display info about the song to the user
+        await ctx.send(video_title)
+        await ctx.send(web_page_url)
+        print('playing\n', video_title)
+
+# TODO: Only allow song commands in the song channel
+@client.command(pass_context=True)
+async def yt(ctx, url : str):
+    # The bot joins the voice channel, if not already present
+    voice = await bot_join_voice(ctx)
+    if not voice:
+        return
+        
+    # Downloads the song based off the search term
+    await bot_queue_song_by_url(ctx, url)
 
 @client.command()
 async def sp_playlists(ctx):
@@ -249,19 +271,25 @@ async def sp_playlists(ctx):
         await ctx.send('Please call command: $sp_playlist (without the s at the end) with a playlist number')
 
 @client.command()
-async def sp_playlist(ctx, index : int, shuffle = ""):
+async def sp_playlist(ctx, index : int):
+    # The bot joins the voice channel, if not already present
     voice = await bot_join_voice(ctx)
     if not voice:
         return
 
+    # Select the playlist that user wants by index
     spotify_processor.select_playlist(index)
-
     await ctx.send(f'Found playlist: {spotify_processor.selected_playlist}.')
+
+    # Find a random song in the spotify playlist
     random_song = spotify_processor.random_song()
     spotify_processor.song_queue.append(random_song)
     await ctx.send(f'Playing: {random_song[1]} by {random_song[0]}')
-    url = random_song[1] + " " + random_song[0]
 
+    # The url is the search term entered to youtube through youtube_dl
+        # To download the song
+    url = random_song[1] + " " + random_song[0]
+    # Everything afterwards is the same logic as the $yt command
 
     song_there = os.path.isfile('song.mp3')
     try:

@@ -4,6 +4,10 @@ import youtube_dl
 class Music:
 	def __init__(self):
 		'''Class that manages the downloading of youtube songs/videos.'''
+		self.info_dict = {}
+		self.video_title = ""
+		self.video_duration = 0
+		self.web_page_url = ""
 		self.ydl_opts = {
 			'format': 'bestaudio/best',
 			'quiet': True,
