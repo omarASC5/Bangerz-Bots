@@ -13,7 +13,7 @@ import sys
 import spotipy
 import spotipy.oauth2 as oauth2
 import asyncio
-from config import *
+from os.path import join, dirname
 from dotenv import load_dotenv
 
 load_dotenv()
