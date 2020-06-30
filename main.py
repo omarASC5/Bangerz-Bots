@@ -14,6 +14,9 @@ import spotipy
 import spotipy.oauth2 as oauth2
 import asyncio
 from config import *
+from dotenv import load_dotenv
+
+load_dotenv()
 
 spotify_processor = SpotifyProcessor(
     os.environ["SPOTIFY_CLIENT_ID"],

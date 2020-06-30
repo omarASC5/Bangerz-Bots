@@ -2,3 +2,4 @@ config.py
 user_playlists.py
 Queue/
 song.mp3
+.env
