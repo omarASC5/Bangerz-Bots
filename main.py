@@ -174,15 +174,7 @@ async def bot_join_voice(ctx):
         voice = await channel.connect()
     return voice
 
-# TODO: Only allow song commands in the song channel
-@client.command(pass_context=True)
-async def yt(ctx, search : str):
-    voice = await bot_join_voice(ctx)
-    if not voice:
-        return
-        
-    url = search
-
+async def bot_remove_old_song_file():
     song_there = os.path.isfile('song.mp3')
     try:
         if song_there:
@@ -194,24 +186,46 @@ async def yt(ctx, search : str):
         await ctx.send("ERROR: Music playing")
         return
 
-    bot_remove_old_queue_folder()
-
-    await ctx.send("Getting song ready now")
-    voice = get(client.voice_clients, guild=ctx.guild)
-
-    music = Music()
-    music.download_song(url)
-
+def bot_rename_file_song_mp3():
     for file in os.listdir("./"):
         if file.endswith('.mp3'):
             name = file
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
+# TODO: Only allow song commands in the song channel
+@client.command(pass_context=True)
+async def yt(ctx, search : str):
+    # The bot joins the voice channel, if not already present
+    voice = await bot_join_voice(ctx)
+    if not voice:
+        return
+        
+    url = search
+
+    # Remove the old song file
+    await bot_remove_old_song_file()
+
+    # Remove the old queue folder
+    bot_remove_old_queue_folder()
+
+    # Prepare the download
+    await ctx.send("Getting song ready now")
+    voice = get(client.voice_clients, guild=ctx.guild)
+
+    # Download the song
+    music = Music()
+    music.download_song(url)
+
+    # Rename the recently downloaded song file to song.mp3
+    bot_rename_file_song_mp3()
+
+    # Play the song.mp3 file in the voice channel
     voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(ctx, voice))
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.5
 
+    # Display the song being played
     if name:
         nname = name.rsplit('-', 2)
         await ctx.send(f'Playing: {nname[1]} by {nname[0]}')
@@ -247,6 +261,8 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
     spotify_processor.song_queue.append(random_song)
     await ctx.send(f'Playing: {random_song[1]} by {random_song[0]}')
     url = random_song[1] + " " + random_song[0]
+
+
     song_there = os.path.isfile('song.mp3')
     try:
         if song_there:
@@ -257,7 +273,6 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
         print("Trying to delete song file, but it's being played")
         await ctx.send("ERROR: Music playing")
         return
-
 
     Queue_infile = os.path.isdir('./Queue')
     try:

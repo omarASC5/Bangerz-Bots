@@ -28,7 +28,7 @@ class SpotifyProcessor:
 			client_id = self.spotify_client_id,
 			client_secret = self.spotify_client_secret
 		)
-		# print("TEST", self.spotify_client_id, self.spotify_client_secret)
+
 		# More spotify account details
 		self.token = self.credentials.get_access_token(as_dict = False)
 		self.spotify = spotipy.Spotify(auth = self.token)
