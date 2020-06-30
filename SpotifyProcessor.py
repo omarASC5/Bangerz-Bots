@@ -20,6 +20,8 @@ class SpotifyProcessor:
 		self.selected_playlist = ''
 		self.selected_songs = []
 		self.current_song = ''
+		self.num_downloaded = 0
+		self.song_queue = []
 
 		# Spotify oauth2 object
 		self.credentials = oauth2.SpotifyClientCredentials(
@@ -34,40 +36,40 @@ class SpotifyProcessor:
 		# All public playlists under the Spotify username's account
 		self.playlists = self.spotify.user_playlists(self.spotify_username)
 
-	def show_tracks(self, tracks, playlist_name):
+	def show_tracks(self, tracks):
 		'''Helper function that adds to the playlists table:
 		playlists_table[playlist_name] = [(artist, song)...]'''
 		for item in tracks['items']:
 			track = item['track']
 			try:
-				self.playlists_table[playlist_name].append(
+				self.selected_songs.append(
 					(track['artists'][0]['name'], track['name'])
 				)
 			except:
 				continue
 
-	def fill_playlists_table(self):
+	def fill_selected_playlist(self, index):
 		'''A function that fills the table as:
 				playlists_table[playlist_name] = [(artist, song)...]'''
 		if not self.token:
 			print("Can't get token for", self.spotify_username)
 		else:
-			for playlist in self.playlists['items']:
+			for counter, playlist in enumerate(self.playlists['items']):
+				if counter + 1 == index:
 				# Makes new empty array under playlist_name to store the
 					# tuples of songs and artists
-				self.playlists_table[playlist['name']] = []
-				self.playlists_names.append(playlist['name'])
-				results = self.spotify.playlist(
-					playlist['id'],
-					fields = 'tracks,next'
-				)
-				tracks = results['tracks']
-				self.show_tracks(tracks, playlist['name'])
+					self.selected_playlist = playlist['name']
+					
+					results = self.spotify.playlist(
+						playlist['id'],
+						fields = 'tracks,next'
+					)
+					tracks = results['tracks']
+					self.show_tracks(tracks)
 
-				while tracks['next']:
-					tracks = self.spotify.next(tracks)
-					self.playlists_names.append(playlist['name'])
-					self.show_tracks(tracks, playlist['name'])
+					while tracks['next']:
+						tracks = self.spotify.next(tracks)
+						self.show_tracks(tracks)
 
 	def fill_playlists_names(self):
 		'''A function that simply populates the playlists_names member variable,
@@ -87,9 +89,10 @@ class SpotifyProcessor:
 			index += 1
 
 	def select_playlist(self, new_index):
+		self.fill_selected_playlist(new_index)
 		'''Selects the playlist by index the user requested.'''
 		if new_index < 1 or new_index > len(self.playlists_table.keys()):
-			print(f'Please select a playlist number in range: [1, {len(self.playlists_table.keys())}]')
+			print(f'Please select a playlist number in range: [1, {len(self.selected_songs)}]')
 			return
 		else:
 			self.selected_playlist_index = new_index
@@ -133,6 +136,7 @@ class SpotifyProcessor:
 			self.selected_playlist,
 			video_mode = processing[3]
 		)
+		self.num_downloaded += 1
 
 	# 2 Pac No Threading Download Time: 150 seconds
 	# 2 Pac WITH Threading Download Time: 71.4 seconds -> Double Performance

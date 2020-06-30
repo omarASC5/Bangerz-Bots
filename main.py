@@ -94,7 +94,7 @@ async def join(ctx):
 
 queues = {}
 
-def check_queue(voice):
+def check_queue(ctx, voice):
     Queue_infile = os.path.isdir('./Queue')
     if Queue_infile is True:
         DIR = os.path.abspath(os.path.realpath('Queue'))
@@ -103,7 +103,11 @@ def check_queue(voice):
 
         try:
             first_file = os.listdir(DIR)[0]
-
+            next_song_to_play = spotify_processor.song_queue.pop(0)
+            spotify_processor.current_song = \
+            f'Playing {next_song_to_play[1]} by {next_song_to_play[0]}'
+            # await ctx.send(spotify_processor.current_song)
+            
         except:
             print("No more queue song(s)")
             queues.clear()
@@ -127,7 +131,7 @@ def check_queue(voice):
                 if file.endswith('.mp3'):
                     os.rename(file, 'song.mp3')
 
-            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(voice))
+            voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(ctx, voice))
             voice.source = discord.PCMVolumeTransformer(voice.source)
             voice.source.volume = 0.5
 
@@ -201,7 +205,7 @@ async def yt(ctx, search : str):
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(voice))
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(ctx, voice))
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.5
 
@@ -225,7 +229,7 @@ async def sp_playlists(ctx):
             str_to_print += f'{val + 1}. {playlists_name}\n'
         await ctx.send(f'''```{str_to_print}```''')
 
-    await ctx.send('Please call command: $sp_playlist (without the s at the end) with a playlist number')
+        await ctx.send('Please call command: $sp_playlist (without the s at the end) with a playlist number')
 
 @client.command()
 async def sp_playlist(ctx, index : int, shuffle = ""):
@@ -233,17 +237,11 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
     if not voice:
         return
 
-    i = 1
-    found_playlist = ''
-    found_songs = []
-    for playlist, songs in playlists_table.items():
-        if i == index:
-            found_playlist = playlist
-            found_songs = songs
-            break
-        i += 1
-    await ctx.send(f'Found playlist: {found_playlist}')
-    random_song = random.choice(found_songs)
+    spotify_processor.select_playlist(index)
+
+    await ctx.send(f'Found playlist: {spotify_processor.selected_playlist}.')
+    random_song = spotify_processor.random_song()
+    spotify_processor.song_queue.append(random_song)
     await ctx.send(f'Playing: {random_song[1]} by {random_song[0]}')
     url = random_song[1] + " " + random_song[0]
     song_there = os.path.isfile('song.mp3')
@@ -291,7 +289,11 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(voice))
+    voice.play(discord.FFmpegPCMAudio('song.mp3'), after=lambda e: check_queue(ctx, voice))
+    
+    next_song_to_play = spotify_processor.song_queue.pop(0)
+    spotify_processor.current_song = \
+    f'Playing {next_song_to_play[1]} by {next_song_to_play[0]}'
     voice.source = discord.PCMVolumeTransformer(voice.source)
     voice.source.volume = 0.5
 
@@ -339,7 +341,8 @@ async def sp_playlist(ctx, index : int, shuffle = ""):
         print('Song added to queue')
 
     def next_song():
-        random_song = random.choice(found_songs)
+        random_song = random.choice(spotify_processor.selected_songs)
+        spotify_processor.song_queue.append(random_song)
         print('playing', random_song)
         url = random_song[1] + " " + random_song[0]
         q2(url)
@@ -390,6 +393,7 @@ async def resume(ctx):
 
 @client.command(pass_context=True, aliases=['s, ski'])
 async def skip(ctx):
+    # TODO: Only allow the skip command to work if there is a Queue folder with at least one song
     voice = get(client.voice_clients, guild=ctx.guild)
     
     queues.clear()
@@ -409,25 +413,36 @@ async def leave(ctx):
     voice_client = guild.voice_client
     await voice_client.disconnect()
 
-# TODO: Current Song
 @client.command(pass_context=True, aliases=['c, cur', 'curr'])
 async def current(ctx):
-    await ctx.send('Currently playing: song_name by artist_name')
+    await ctx.send(spotify_processor.current_song)
 
-# TODO: Clear Queue
+def bot_clear_queue():
+    queues.clear()
+    bot_remove_old_queue_folder()
+    # CLear all exisiting variables and recreate with new username
+    spotify_processor.__init__(
+        os.environ["SPOTIFY_CLIENT_ID"],
+        os.environ["SPOTIFY_CLIENT_SECRET"],
+        str(open("username.txt", "r").readline())
+    )
+
 @client.command(pass_context=True, aliases=['cl, clea',])
 async def clear(ctx):
-    queues.clear()
+    bot_clear_queue()
     await ctx.send('Queue cleared!')
 
-
-# TODO: Print out the songs in the queue
 @client.command(pass_context=True, aliases=['q, que'])
-async def queue(ctx, search : str):
-    await ctx.send('Songs in the queue:')
-    # TODO: Print queued songs here
+async def queue(ctx):
+    str_to_print = '';
+    for val, song in enumerate(spotify_processor.song_queue):
+        str_to_print += f'{val + 1}. {song[1]} by {song[0]}\n'
+    if str_to_print == '':
+        await ctx.send('No songs in the queue')
+    else:
+        await ctx.send('Songs in the queue:')
+        await ctx.send(f'''```{str_to_print}```''')
 
-# TODO: Rename Command
 @client.command(pass_context=True, aliases=['play_n, play_nex'])
 async def play_next(ctx, search : str):
     url = search
