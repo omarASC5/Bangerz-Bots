@@ -193,16 +193,10 @@ def bot_rename_file_song_mp3():
             print("Renamed File: {}".format(name), end='\n\n')
             os.rename(file, 'song.mp3')
 
-async def bot_queue_song_by_url(ctx, url):
-    # Remove the old song file
-    await bot_remove_old_song_file()
-
-    # # Remove the old queue folder
-    # bot_remove_old_queue_folder()
-
+async def bot_queue_song_by_url(ctx, voice, url):
     # Prepare the download
     await ctx.send("Getting song ready now")
-    voice = get(client.voice_clients, guild=ctx.guild)
+    # voice = get(client.voice_clients, guild=ctx.guild)
 
     # Download the song
     music = Music()
@@ -251,8 +245,14 @@ async def yt(ctx, url : str):
     if not voice:
         return
         
+    # Remove the old song file
+    await bot_remove_old_song_file()
+
+    # Remove the old queue folder
+    bot_remove_old_queue_folder()
+
     # Downloads the song based off the search term
-    await bot_queue_song_by_url(ctx, url)
+    await bot_queue_song_by_url(ctx, voice, url)
 
 @client.command()
 async def sp_playlists(ctx):
@@ -283,84 +283,95 @@ async def sp_playlist(ctx, index : int):
     if not voice:
         return
 
+    # Remove the old song file
+    await bot_remove_old_song_file()
+
+    # Remove the old queue folder
+    bot_remove_old_queue_folder()
+
     # Select the playlist that user wants by index
     spotify_processor.select_playlist(index)
     await ctx.send(f'Found playlist: {spotify_processor.selected_playlist}.')
 
-    while True:
-        # Find a random song in the spotify playlist
-        random_song = bot_find_random_song_in_playlist(spotify_processor)
-        await ctx.send(f'Playing: {random_song[1]} by {random_song[0]}')
+    def q2(url):
+        Queue_infile = os.path.isdir('./Queue')
+        if Queue_infile is False:
+            os.mkdir('Queue')
 
-        # The url is the search term entered to youtube through youtube_dl
-            # To download the song
+        DIR = os.path.abspath(os.path.realpath('Queue'))
+        q_num = len(os.listdir(DIR))
+        q_num += 1
+        add_queue = True
+
+        while add_queue:
+            if q_num in queues:
+                q_num += 1
+            else:
+                add_queue = False
+                queues[q_num] = q_num
+
+        queue_path = os.path.abspath(os.path.realpath('Queue') + f'/song{q_num}.%(ext)s')
+
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'quiet': True,
+            'outtmpl': queue_path,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'default_search': 'ytsearch'
+        }
+
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            print('Downloading audio now\n')
+            ydl.download([url])
+        # await ctx.send('Adding song ' + str(q_num) + ' to the queue')
+
+        print('Song added to queue')
+
+    def next_song():
+        random_song = random.choice(spotify_processor.selected_songs)
+        spotify_processor.song_queue.append(random_song)
+        print('playing', random_song)
         url = random_song[1] + " " + random_song[0]
-        # Everything afterwards is the same logic as the $yt command
+        q2(url)
+        return random_song
 
-        music = await bot_queue_song_by_url(ctx, url)
-        await asyncio.sleep(music.video_duration)
-    
-    # def q2(url):
-    #     Queue_infile = os.path.isdir('./Queue')
-    #     if Queue_infile is False:
-    #         os.mkdir('Queue')
+    ###########
 
-    #     DIR = os.path.abspath(os.path.realpath('Queue'))
-    #     q_num = len(os.listdir(DIR))
-    #     q_num += 1
-    #     add_queue = True
+    # Find a random song in the spotify playlist
+    random_song = bot_find_random_song_in_playlist(spotify_processor)
+    await ctx.send(f'Playing: {random_song[1]} by {random_song[0]}')
 
-    #     while add_queue:
-    #         if q_num in queues:
-    #             q_num += 1
-    #         else:
-    #             add_queue = False
-    #             queues[q_num] = q_num
+    # The url is the search term entered to youtube through youtube_dl
+        # To download the song
+    url = random_song[1] + " " + random_song[0]
+    # Everything afterwards is the same logic as the $yt command
 
-    #     queue_path = os.path.abspath(os.path.realpath('Queue') + f'/song{q_num}.%(ext)s')
+    music = await bot_queue_song_by_url(ctx, voice, url)
 
-    #     ydl_opts = {
-    #         'format': 'bestaudio/best',
-    #         'quiet': True,
-    #         'outtmpl': queue_path,
-    #         'postprocessors': [{
-    #             'key': 'FFmpegExtractAudio',
-    #             'preferredcodec': 'mp3',
-    #             'preferredquality': '192',
-    #         }],
-    #         'default_search': 'ytsearch'
-    #     }
+    ###########
 
-    #     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    #         print('Downloading audio now\n')
-    #         ydl.download([url])
-    #     # await ctx.send('Adding song ' + str(q_num) + ' to the queue')
+    Queue_infile = os.path.isdir('./Queue')
+    if Queue_infile is False:
+        os.mkdir('Queue')
 
-    #     print('Song added to queue')
+    DIR = os.path.abspath(os.path.realpath('Queue'))
+    q_num = len(os.listdir(DIR))
+    while q_num != 4:
+        next_song_name = next_song()
+        q_num = len(os.listdir(DIR))
 
-    # def next_song():
-    #     random_song = random.choice(spotify_processor.selected_songs)
-    #     spotify_processor.song_queue.append(random_song)
-    #     print('playing', random_song)
-    #     url = random_song[1] + " " + random_song[0]
-    #     q2(url)
-    #     return random_song
+    ##########
 
-    # for _ in range(3):
-    #     next_song_name = next_song()
-    #     # Playing next: {song_name} by {artist}
-    #     # await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
+    while True:
+        next_song_name = next_song()
+            # Playing next: {song_name} by {artist}
+            # await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
+        await asyncio.sleep(250)
 
-    # while True:
-    #     # TODO: Limit / Cap the queue to 30 songs here
-    #     for _ in range(2):
-    #         next_song_name = next_song()
-    #         # Playing next: {song_name} by {artist}
-    #         # await ctx.send(f'Playing next: {next_song_name[1]} by {next_song_name[0]}')
-    #     await asyncio.sleep(250)
-    # # If the queue is empty add 10 more songs
-
-    # search(random_song[1])
 
 @client.command(pass_context=True, aliases=['pa, pau'])
 async def pause(ctx):
