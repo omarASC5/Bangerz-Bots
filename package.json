@@ -1,0 +1,21 @@
+{
+  "name": "bangerz-bots",
+  "version": "1.0.0",
+  "description": "A banger bot",
+  "main": "index.js",
+  "scripts": {
+    "build": "",
+    "lint": "",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omarASC5/Bangerz-Bots.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/omarASC5/Bangerz-Bots/issues"
+  },
+  "homepage": "https://github.com/omarASC5/Bangerz-Bots#readme"
+}
