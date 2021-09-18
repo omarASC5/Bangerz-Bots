@@ -17,5 +17,14 @@
   "bugs": {
     "url": "https://github.com/omarASC5/Bangerz-Bots/issues"
   },
-  "homepage": "https://github.com/omarASC5/Bangerz-Bots#readme"
+  "homepage": "https://github.com/omarASC5/Bangerz-Bots#readme",
+  "dependencies": {
+    "@typeit/discord": "^4.0.10",
+    "discord.js": "^13.1.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.31.1",
+    "@typescript-eslint/parser": "^4.31.1",
+    "typescript": "^4.4.3"
+  }
 }
